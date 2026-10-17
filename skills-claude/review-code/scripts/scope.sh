@@ -15,8 +15,8 @@
 #   existing path(s)                 -> path      (whole files, working tree)
 #
 # Usage:
-#   scripts/scope.sh [<hash> | <N> | <a..b> | <branch> | <path> ...] [--spec <value>]
-#   (--spec is ignored here; the skill reads the spec itself)
+#   scripts/scope.sh [<hash> | <N> | <a..b> | <branch> | <path> ...] [--spec <value>] [--quick]
+#   (--spec and --quick are ignored here; the skill handles them itself)
 
 set -u
 
@@ -82,10 +82,13 @@ TARGET=""
 DIFF_CMD=""
 ARGS=()
 
-# Drop "--spec <value>" (or "--spec=<value>"): the spec is read by the skill, not
-# here, and must not be mistaken for a path or a ref.
+# Drop "--spec <value>" (or "--spec=<value>") and "--quick": the skill handles
+# them, and they must not be mistaken for a path or a ref.
 while [ "$#" -gt 0 ]; do
     case "$1" in
+        --quick)
+            shift
+            ;;
         --spec)
             [ "$#" -ge 2 ] || die "--spec needs a value (a file path or a Notion URL)."
             shift 2

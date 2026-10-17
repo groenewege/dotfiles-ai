@@ -1,7 +1,7 @@
 ---
 name: review-code
-description: Multi-lane review of a change set (correctness, project best practices, security, and with --spec conformance to a brief) run as parallel reviewers, merged into one prioritised punch list, reported only, never applied. Different from the built-in /code-review (a single correctness pass that can also fix) and from review-laravel-upgrade (framework upgrade audits). Defaults to the uncommitted working tree, falls back to the last commit; also accepts a commit hash, a number of last commits, a ref range, a branch, or a path. --spec <file | notion-url> adds a lane that checks the change against the brief it implements.
-argument-hint: "[<hash> | <N last commits> | <a..b> | <branch> | <path>] [--spec <file | notion-url>]"
+description: Multi-lane review of a change set (correctness, project best practices, security, and with --spec conformance to a brief) run as parallel reviewers, merged into one prioritised punch list, reported only, never applied. Different from the built-in /code-review (a single correctness pass that can also fix) and from review-laravel-upgrade (framework upgrade audits). Defaults to the uncommitted working tree, falls back to the last commit; also accepts a commit hash, a number of last commits, a ref range, a branch, or a path. --spec <file[#item] | notion-url> adds a lane that checks the change against the brief it implements. --quick runs one combined correctness and spec reviewer instead of the lanes, for small changes.
+argument-hint: "[<hash> | <N last commits> | <a..b> | <branch> | <path>] [--spec <file[#item] | notion-url>] [--quick]"
 disable-model-invocation: true
 ---
 
@@ -44,6 +44,7 @@ list. Resolution rules, so you can sanity-check what it chose:
 | a branch name | `branch` | the branch against its fork point from develop/main/master |
 | one or more paths | `path` | those files, whole content as they are now |
 | any of the above plus `--spec <value>` | unchanged | the script ignores the pair; see Step 1b |
+| any of the above plus `--quick` | unchanged | the script ignores it; see Step 2 |
 
 If the script exits non-zero, stop and show the user its error. Do not guess a
 target. If the user's request is something the script cannot express (for
@@ -60,8 +61,11 @@ Without `--spec`, skip this step; the Spec lane does not run and the report says
 so. With it, load the spec text yourself, so the lane receives it verbatim and
 needs no Notion access of its own:
 
-- **A file path**: read it in full. `/task` writes one with the brief (GOAL,
-  REQUIREMENTS, OUT OF SCOPE) and the decisions taken at its plan gate.
+- **A file path**: read it in full. A `/task` run file (it starts with
+  `# Run:`): take its `Decisions` section and, for each item, its `Brief` and
+  `Plan` sections; leave out `Build`, `Review` and `Outcome`, which are history,
+  not requirements. With `#<n>` after the path
+  (`--spec .task-runs/<file>.md#2`), take `Decisions` and item `<n>` only.
 - **A Notion URL**: fetch the page with the Notion tools: its title, the brief
   sections of the body (GOAL, REQUIREMENTS, OUT OF SCOPE), and its comments,
   which may record later decisions. Leave out REFERENCES; they are paths, not
@@ -103,6 +107,14 @@ Lane specifics:
   full; it has no other access to it.
 
 Do not do any reviewing yourself while they run. Wait for all of them.
+
+**With `--quick`**, launch one `Agent` call instead of the lanes: a combined
+reviewer that reads sections 1, 2 and, when a spec was loaded, 5 of
+`references/lanes.md`, and returns the Correctness findings and the Spec
+findings as two separate punch lists. Its prompt carries the same four items as
+a lane's, plus the spec text when there is one. The Security and Conventions
+groups of the report say "Not run: --quick". Use it for small changes; a change
+touching auth, money or personal data deserves the full lanes.
 
 ## Step 3 — Aggregate
 
@@ -157,7 +169,7 @@ and what is the single most important thing to fix>
 Every group is present even when empty, because "clean" and "not checked" must
 read differently. Keep the fix descriptions concrete enough to apply without
 re-reading the finding. If a lane could not run (skill unavailable, no rule
-set), say so under its group rather than silently reporting clean.
+set, `--quick`), say so under its group rather than silently reporting clean.
 
 ## Step 5 — HTML page when the report is long
 

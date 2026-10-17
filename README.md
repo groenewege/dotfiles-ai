@@ -13,6 +13,7 @@ skills/<name>/       → ~/.claude/skills/<name> and ~/.codex/skills/<name>
 skills-claude/       Claude-only variants → ~/.claude/skills/
 skills-codex/        Codex-only variants  → ~/.codex/skills/
 commands/<name>.md   Claude Code slash commands → ~/.claude/commands/
+docs/                how my workflows fit together (not linked anywhere)
 plugins/             Claude Code marketplaces and plugins, installed by plugins.sh
 install.sh           link everything (--dry-run to preview)
 plugins.sh           add missing marketplaces and plugins
@@ -23,6 +24,14 @@ Every link points into this repo, so editing `~/.claude/skills/<name>/SKILL.md`
 edits the repo. Whatever was in the way the first time is moved to
 `~/.dotfiles-backup/<timestamp>/`. Skills installed by other tools (herdr, lerd,
 claude.ai's `synced` folder) are left alone.
+
+## Task workflow
+
+Client work goes from a Notion task to commits on `develop` through three
+skills: `/prepare-task` writes the briefs, `/task` builds them (one commit per
+step, asking only when a change is risky), and `/review-code` reviews. How they
+fit together, every option, and the plan for parallel work with worktrees:
+[docs/task-workflow.md](docs/task-workflow.md).
 
 ## Install
 

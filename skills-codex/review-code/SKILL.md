@@ -1,13 +1,13 @@
 ---
 name: review-code
-description: Explicitly invoked multi-lane review (correctness, project best practices, security, and with --spec conformance to a brief) of a change set, reporting a prioritised punch list and never editing code. Defaults to the uncommitted working tree, falls back to the last commit, and accepts a commit hash, a number of last commits, a ref range, a branch, or a path; --spec <file> adds a lane that checks the change against the brief it implements. Use only when the user explicitly invokes review-code.
+description: Explicitly invoked multi-lane review (correctness, project best practices, security, and with --spec conformance to a brief) of a change set, reporting a prioritised punch list and never editing code. Defaults to the uncommitted working tree, falls back to the last commit, and accepts a commit hash, a number of last commits, a ref range, a branch, or a path; --spec <file[#item]> adds a lane that checks the change against the brief it implements; --quick runs one combined correctness and spec reviewer instead of the lanes, for small changes. Use only when the user explicitly invokes review-code.
 metadata:
-  argument-hint: "[<hash> | <N last commits> | <a..b> | <branch> | <path>] [--spec <file | notion-url>]"
+  argument-hint: "[<hash> | <N last commits> | <a..b> | <branch> | <path>] [--spec <file[#item] | notion-url>] [--quick]"
 ---
 
 **READ ONLY: Never change code, config, tests or docs, not even an obvious one-line fix. The only file this skill may create or write is `<repository root>/review-code-report.html`. Findings describe the fix; the user applies it.**
 
-Codex invocation: `$review-code [target] [--spec <file>]` (the native equivalent of `/review-code [target] [--spec <file>]`). Never auto-trigger this skill. Do not run formatters, generators, installers, test commands that write files, or any other mutating project workflow. Keep intermediate results in conversation/tool context, not files.
+Codex invocation: `$review-code [target] [--spec <file>] [--quick]` (the native equivalent of `/review-code [target] [--spec <file>] [--quick]`). Never auto-trigger this skill. Do not run formatters, generators, installers, test commands that write files, or any other mutating project workflow. Keep intermediate results in conversation/tool context, not files.
 
 ## Step 1 — Resolve the scope
 
@@ -25,6 +25,7 @@ Show this resolution table:
 | Branch | Branch vs its fork point from develop/main/master |
 | Existing path(s) | Listed files in full, from the working tree |
 | Any of the above plus `--spec <value>` | Unchanged: the script ignores the pair; see Step 1b |
+| Any of the above plus `--quick` | Unchanged: the script ignores it; see Step 2 |
 
 If the script exits non-zero, stop and show its error; never guess a target. Keep its complete output verbatim in context. Its file list is the whole universe of the review: unrelated work in progress is off limits and must not be mentioned. The report itself is always excluded, even if explicitly listed as a path. Do not silently expand an empty scope or repair the supplied script.
 
@@ -34,7 +35,7 @@ Read the diff using the printed command's arguments as safely quoted Git argumen
 
 Without `--spec`, skip this step: the Spec lane does not run and the report says so. With it, load the spec text yourself so the lane receives it verbatim:
 
-- A file path (what `/task` writes: the brief's GOAL, REQUIREMENTS and OUT OF SCOPE, plus the decisions taken at its plan gate): read it in full. It lives outside the repository and is input, never a file in scope.
+- A file path: read it in full. It is input, never a file in scope. A `/task` run file (it starts with `# Run:`): take its `Decisions` section and, for each item, its `Brief` and `Plan` sections; leave out `Build`, `Review` and `Outcome`, which are history, not requirements. With `#<n>` after the path (`--spec .task-runs/<file>.md#2`), take `Decisions` and item `<n>` only.
 - A Notion URL: fetch the page's title, the GOAL, REQUIREMENTS and OUT OF SCOPE sections and its comments, if Notion tools are available. If they are not, the spec cannot be loaded.
 
 If the spec cannot be loaded, say so and run the other three lanes; the Spec group reports "Not run" with the reason. Never review against a spec you guessed.
@@ -52,6 +53,8 @@ Every prompt contains:
 - Return the section 1 punch list, a separate “Worth a look” list, and a “Clean:” line naming checked dimensions. Also disclose any checks not completed. Conventions must identify the rule set used; security findings include severity and confidence.
 
 The Spec lane, only when Step 1b loaded a spec, receives the spec text in full in its prompt; it has no other access to it.
+
+With `--quick`, spawn one subagent instead of the lanes: a combined reviewer that reads sections 1, 2 and, when a spec was loaded, 5 of `references/lanes.md`, and returns the Correctness and Spec findings as two separate punch lists. Its prompt carries the same items as a lane's, plus the spec text when there is one. The Security and Conventions groups report "Not run: --quick". Use it for small changes; a change touching auth, money or personal data deserves the full lanes.
 
 Lane 2 receives the repository root explicitly so it can locate `composer.json`, the `laravel-best-practices` skill, `CLAUDE.md`/`AGENTS.md`, and `.ai/guidelines` as section 3 specifies. Repository instructions remain applicable, but their usual edit/test/format workflows never authorize changes during this read-only review.
 
