@@ -14,9 +14,9 @@ skills-claude/       Claude-only variants → ~/.claude/skills/
 skills-codex/        Codex-only variants  → ~/.codex/skills/
 commands/<name>.md   Claude Code slash commands → ~/.claude/commands/
 docs/                how my workflows fit together (not linked anywhere)
-plugins/             Claude Code marketplaces and plugins, installed by plugins.sh
+plugins/             Claude plugins and Codex MCP servers, added by plugins.sh
 install.sh           link everything (--dry-run to preview)
-plugins.sh           add missing marketplaces and plugins
+plugins.sh           add missing Claude plugins and Codex MCP servers
 adopt.sh <name>      move a skill an agent created into this repo
 ```
 
@@ -39,7 +39,7 @@ fit together, every option, and the plan for parallel work with worktrees:
 git clone https://github.com/groenewege/dotfiles-ai.git ~/Code/dotfiles-ai
 ~/Code/dotfiles-ai/install.sh --dry-run   # preview
 ~/Code/dotfiles-ai/install.sh
-~/Code/dotfiles-ai/plugins.sh             # optional: Claude Code plugins
+~/Code/dotfiles-ai/plugins.sh             # Claude plugins, Codex MCP servers
 ```
 
 The dotfiles repos of both machines do this for you.

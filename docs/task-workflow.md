@@ -158,7 +158,7 @@ claude -p --permission-mode plan '/review-code 3 --spec .task-runs/<file>.md'
 | Where | Notes |
 |---|---|
 | Claude Code in a terminal | Builders and reviewers are subagents. |
-| Codex in a terminal | Same, with Codex's subagents. Codex has no Notion MCP for now, so `$task` works on free-text briefs and run files; Notion tasks need Claude, or the Notion MCP added to Codex's config later. |
+| Codex in a terminal | Same, with Codex's subagents. Codex reads Notion through the same hosted Notion MCP as Claude, added by `plugins.sh`, which also starts the Notion login in the browser (once per machine; `codex mcp login notion` redoes it). |
 | Herdr | Nothing Herdr-specific: run `/task` in a pane. Herdr still shows each agent's state. Its own skill remains for when you ask for Herdr by name. |
 | T3 Code (later) | `/task` runs as a provider skill. T3 runs one skill per message, which `/task` respects. |
 

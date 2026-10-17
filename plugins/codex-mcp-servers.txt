@@ -1,0 +1,5 @@
+# Remote MCP servers for Codex (name url), added with `codex mcp add --url`.
+# `codex mcp add` starts the OAuth login in the browser; the token is per
+# machine. Log in again with `codex mcp login <name>`.
+
+notion https://mcp.notion.com/mcp
