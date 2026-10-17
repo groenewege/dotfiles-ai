@@ -76,7 +76,7 @@ report_unmanaged() {
     [[ -e $entry ]] || continue
     name=$(basename "$entry")
     [[ $EXTERNAL_SKILLS == *" $name "* ]] && continue
-    [[ -L $entry && $(readlink -f "$entry") == "$AI_DIR"/* ]] && continue
+    [[ -d $AI_DIR/skills/$name || -d $AI_DIR/skills-claude/$name || -d $AI_DIR/skills-codex/$name ]] && continue
     warn "$(pretty "$entry") is not in dotfiles-ai; keep it with: $AI_DIR/adopt.sh $name"
   done
 }
