@@ -47,6 +47,28 @@ The dotfiles repos of both machines do this for you.
 `install.sh` lists skill folders it doesn't manage, so a skill created by an
 agent doesn't stay on one machine by accident.
 
+## Editing a skill
+
+1. **Pull first**, so you edit the latest version and avoid a merge conflict
+   with the other machine: `git -C ~/Code/dotfiles-ai pull`.
+2. **Edit** through `~/.claude/skills/<name>/` (or in this repo directly; it's
+   the same file).
+3. **Check what changed.** Agents edit skills too (e.g. folding upgrade
+   learnings into `upgrade-laravel-*`), so a skill can change without you
+   touching it:
+   ```bash
+   cd ~/Code/dotfiles-ai
+   git status
+   git diff
+   ```
+4. **Remove client details before committing.** Agent-written learnings tend
+   to name the real app, client or server. Replace them with neutral examples
+   (ACME, `example.test`).
+5. **Commit and push**: `git commit -am "upgrade-laravel-13: …" && git push`.
+6. **On the other machine**, `git pull` here (Omarchy's `update.sh` does it).
+   An edited skill needs nothing more; run `./install.sh` only when a skill
+   was added or removed.
+
 This repo is public: keep client names, hostnames and tokens out of it.
 Machine-specific settings (`~/.claude/settings.json`, Codex's `config.toml`)
 stay in each machine's own dotfiles.
