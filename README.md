@@ -23,7 +23,7 @@ adopt.sh <name>      move a skill an agent created into this repo
 Every link points into this repo, so editing `~/.claude/skills/<name>/SKILL.md`
 edits the repo. Whatever was in the way the first time is moved to
 `~/.dotfiles-backup/<timestamp>/`. Skills installed by other tools (herdr, lerd,
-claude.ai's `synced` folder) are left alone.
+Omarchy, claude.ai's `synced` folder) are left alone.
 
 ## Task workflow
 

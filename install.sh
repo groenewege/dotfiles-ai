@@ -17,7 +17,9 @@ DRY_RUN=0
 [[ ${1:-} == --dry-run || ${1:-} == -n ]] && DRY_RUN=1
 
 # Skills other tools install into the same folders; not ours to manage.
-EXTERNAL_SKILLS=" herdr lerd synced "
+# omarchy, omarchy-app and diagnose-crash come with Omarchy
+# (default/agents/skills in its repo).
+EXTERNAL_SKILLS=" herdr lerd synced omarchy omarchy-app diagnose-crash "
 
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
 warn() { printf '  \033[33m!\033[0m %s\n' "$*" >&2; }
