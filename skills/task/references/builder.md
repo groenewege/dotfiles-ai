@@ -1,8 +1,9 @@
 # The builder
 
-The builder implements one item and stages it. The orchestrator commits it. A
-run of several items gives each item to a fresh builder subagent with the
-prompt below. A single-item run follows the same rules inline.
+The builder implements one item and stages it. The orchestrator commits it. In
+a run of several items, each plan item goes to a fresh builder subagent with
+the prompt below. Go items, and the only item of a single-item run, are built
+inline under the same rules.
 
 ## Prompt
 

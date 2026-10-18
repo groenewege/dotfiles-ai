@@ -149,9 +149,13 @@ Record each classification and its reason in the run file.
   Phase F.
 - **Any plan item or open question:** write the **preflight**, one message for the
   whole run, following `templates/plan.md`: a plan for each plan item, one line
-  for each go item, every open question grouped at the end. Enter plan mode if
-  available; otherwise stay read-only until approved. Wait for explicit approval.
-  Record the answers and approved plans in the run file.
+  for each go item, every open question grouped at the end. Stay read-only
+  until it is approved: the run file and the `info/exclude` line are the only
+  writes allowed before then. Do not enter plan mode yourself, since it would
+  block the run file. If the human has already turned it on, keep the run
+  file's contents in your notes and write it right after approval, before the
+  first build. Wait for explicit approval. Record the answers and approved
+  plans in the run file.
 
 `plan first` makes every item a plan item. `no plan` turns plan items into go
 items, but an open question or a destructive data change is still asked.
@@ -170,19 +174,20 @@ Items run one at a time, in frontier order. For each item:
 1. **Start.** Set the Notion `Status` to the in-progress option on the item (the
    child, not its parent). If it fails, say so and carry on. Free-text items have
    no Notion page. Run file: `building`.
-2. **Build.** A run with a single item builds it inline, following
-   `references/builder.md` as if it were addressed to you. A run with several
-   items gives each one to a **fresh builder subagent** (Claude Code: the Agent
-   tool, `general-purpose`; Codex: `spawn_agent`) whose prompt is the one in
-   `references/builder.md`, filled in. It keeps this session's context small for
-   the items still ahead. Without subagent support, build inline and say so.
+2. **Build.** A go item, or the only item of a run, is built inline, following
+   `references/builder.md` as if it were addressed to you: it is small, and a
+   subagent's start-up costs more than the context it saves. A plan item in a
+   run of several items goes to a **fresh builder subagent** (Claude Code: the
+   Agent tool, `general-purpose`; Codex: `spawn_agent`) whose prompt is the one
+   in `references/builder.md`, filled in. It keeps this session's context small
+   for the items still ahead. Without subagent support, build inline and say so.
 3. **Check the report.** Its first line is the contract. `STATUS: BLOCKED` → step
    8. `STATUS: READY` → confirm that `git diff --cached --name-only` matches the
    files it lists, and that nothing unrelated is staged.
 4. **Review** at the item's tier (`references/review.md`). Clear corrections go
-   to a **fixer**: a fresh builder subagent in fixer mode, given the findings, or
-   inline for a single-item run. At most two fix rounds per item; still failing
-   after that, the item is blocked. Run file: `reviewing`.
+   to a **fixer**, run the way its item was built: a fresh builder subagent in
+   fixer mode, given the findings, or inline. At most two fix rounds per item;
+   still failing after that, the item is blocked. Run file: `reviewing`.
 5. **Commit** what is staged. Subject and body in the style of the repository's
    recent history (`git log -10 --format=%s`); a Notion item ends its message
    with the trailer `Task: <notion url>`. Hooks run; a failing hook is a fix
@@ -203,12 +208,18 @@ Items run one at a time, in frontier order. For each item:
 
 The loop ends when no selected item is buildable.
 
+**Requests outside the items.** The human may ask for something in the middle
+of a run (migrate and seed the dev database so they can test, for example). Do
+it if it is safe or they confirm it, record it in the run file's `Log`, and
+never stage it with an item.
+
 ## Phase G — End of run
 
 1. **Final review** over the run's commits, as `references/review.md` describes
    (the other model when its CLI is available). Clear corrections: one fixer
    round, then one commit, with a `Task:` trailer for each item it touches.
-   Judgment calls go to the human in the report; no second review.
+   Judgment calls go to the human in the report; no second review. Run file:
+   `End-of-run review`.
 2. **Report.**
    - Commits: SHA, subject, item.
    - Each acceptance criterion and whether it is met.
@@ -219,7 +230,8 @@ The loop ends when no selected item is buildable.
    - Review findings left to the human.
    - Notion: the statuses set, or that the "to review" option is missing.
 3. **Push question.** One question: push these commits to `origin/<branch>`? Push
-   only on an explicit yes. Run file: `State: finished`.
+   only on an explicit yes. With no remote, say there is nothing to push instead
+   of asking. Run file: the answer in `Log`, then `State: finished`.
 
 ## Invariants
 

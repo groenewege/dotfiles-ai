@@ -142,7 +142,10 @@ claude -p --permission-mode plan '/review-code 3 --spec .task-runs/<file>.md'
   - the items, with their gate and state (pending, building, reviewing,
     committed, blocked);
   - your decisions;
-  - each item's brief, plan, build report and review.
+  - each item's brief, plan, build report and review;
+  - the end-of-run review and what happened to each finding;
+  - a log of what happened outside the items: your requests in the middle of
+    the run, failed Notion writes, the push answer.
 
   It's ignored through `.git/info/exclude`, so it is never committed and no
   `.gitignore` changes.
@@ -157,7 +160,7 @@ claude -p --permission-mode plan '/review-code 3 --spec .task-runs/<file>.md'
 
 | Where | Notes |
 |---|---|
-| Claude Code in a terminal | Builders and reviewers are subagents. |
+| Claude Code in a terminal | Reviewers and the builders of plan items are subagents; go items are built inline. |
 | Codex in a terminal | Same, with Codex's subagents. Codex reads Notion through the same hosted Notion MCP as Claude, added by `plugins.sh`, which also starts the Notion login in the browser (once per machine; `codex mcp login notion` redoes it). |
 | Herdr | Nothing Herdr-specific: run `/task` in a pane. Herdr still shows each agent's state. Its own skill remains for when you ask for Herdr by name. |
 | T3 Code (later) | `/task` runs as a provider skill. T3 runs one skill per message, which `/task` respects. |

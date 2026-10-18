@@ -66,6 +66,10 @@ Sort every finding as `review-code` reports it:
   item does; otherwise record it for the final report. At the end of the run,
   it goes to the human.
 - **False positive:** record why in the run file and move on.
+- **Worth a look** (a suspicion below `review-code`'s evidence bar): check the
+  cited code yourself. Promote it to a clear correction only when you can state
+  the concrete failure and the fix is small and inside the item, and record the
+  reason in the run file. Otherwise, record it for the final report.
 
 One fixer round answers the review. A second review of the same change happens
 only when the human asks for it.

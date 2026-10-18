@@ -78,8 +78,10 @@ OUT OF SCOPE from the brief, plus anything you noticed and deliberately left alo
 
 ## Then stop
 
-Wait for explicit approval before touching application code. Write the approved
-plans and the answers into the run file before the first build.
+Wait for explicit approval before touching application code. Until then the run
+file is the only thing you write; don't enter plan mode yourself, since it
+would block that file. Write the approved plans and the answers into the run
+file before the first build.
 
 Ask about missing product decisions. Decide naming, file placement, test suite and
 idiom yourself from the neighbouring code. A plan that ends in six questions about

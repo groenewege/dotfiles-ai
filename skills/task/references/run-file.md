@@ -54,7 +54,8 @@ Resolved paths, with any stale path and its substitute, and the reference's
 adapt / drop / add list (keep is the default).
 
 ### Plan
-The approved plan, for a plan item. Omitted for a go item.
+The approved plan, for a plan item. For a go item, only what the preflight
+approved for it (copy, a decision); otherwise omitted.
 
 ### Build
 The builder's report, as returned (fixer reports appended below it).
@@ -64,6 +65,15 @@ The review verdict and what happened to each finding.
 
 ### Outcome
 `committed <sha> <subject>`, or `blocked: <question>` plus `stash@{n}: <message>`.
+
+## End-of-run review
+The reviewer and its model, the report path (`.task-runs/<slug>-review.md`),
+each finding with its class and what happened to it, and the fix commit.
+
+## Log
+One line per event outside the items' states, with its time: a request the
+human made outside the items (and what it changed, such as a database snapshot
+name), a Notion write that failed, the answer to the push question.
 ```
 
 ## States
