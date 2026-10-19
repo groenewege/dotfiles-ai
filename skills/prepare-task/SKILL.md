@@ -29,6 +29,32 @@ ask for it and stop. Do not search the workspace for the task they probably mean
   copy, help texts, labels, validation messages). Quote it and say where it came
   from.
 
+## Asking
+
+Every question to the developer goes through the agent's **question tool**, the
+multiple-choice prompt of plan mode, which works without entering plan mode:
+`AskUserQuestion` in Claude Code, `request_user_input` in Codex (offered outside
+Plan mode only when the `default_mode_request_user_input` feature is on).
+Without it, use the text formats in `templates/preview.md`.
+
+- The preview and the changed briefs come first, in the message; the tool
+  carries only the decisions. Each question is self-contained: the brief it
+  changes and what each answer does to it.
+- Each option is a real choice with its consequence as its description, the
+  recommended one first, marked "(Recommended)". A free-text answer is always
+  available, so the options cover the likely answers, not every answer.
+- A round larger than one call takes goes out in successive calls; it is still
+  one round.
+- The tool replaces the `grilling` skill's text format; its rounds and frontier
+  stand.
+
+| Point | Question | Options |
+|---|---|---|
+| Phase C, each round | each frontier question | the recommended answer, then the alternatives |
+| Phase C, end of round 1 | Anything in mind for this feature (UI, filters, data shape) that is not in Notion? | nothing to add; yes (the free text says what) |
+| Phase C, approval | Write to Notion? | write everything; write all but the blocked items (when any are blocked); revise (the free text says what) |
+| Phase D, a page changed | Write to <page> anyway? | rebuild the affected briefs on the new version; write as approved; stop |
+
 ## Phase A — Read the evidence
 
 Read `references/notion-model.md` first: the data model, and the traps that
@@ -150,7 +176,7 @@ Client questions are never grilled: the client is not here. They stay open
 questions in the briefs and the preview.
 
 The rounds end when the frontier is empty and the developer confirms nothing is
-left. Then ask for approval (wording in `templates/preview.md`) and wait.
+left. Then ask for approval (Asking) and wait.
 Everything a question does not affect is prepared and shown from the start. Do not
 change any status and do not write yet.
 

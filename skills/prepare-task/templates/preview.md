@@ -71,8 +71,10 @@ Blocked:
 - contract renewal / quote request (email, 14/09/2026)
 
 ### Questions for the developer: round 1
-Implementation choices that are yours. Only the frontier: questions whose
-prerequisites are already answered. Grilling format:
+Only without a question tool; with one, the preview ends above and round 1
+follows through the tool (SKILL.md, Asking). Implementation choices that are
+yours. Only the frontier: questions whose prerequisites are already answered.
+Grilling format:
 
 ❓ **Q1** - **<short title>**: options, and which brief the answer changes.
 
@@ -94,7 +96,8 @@ answers are not.
 After each round, write the answers into the affected briefs, show only the briefs
 that changed (in full), and ask the next frontier. A question that depended on an
 answer from this round can now be asked. When the frontier is empty and the
-developer confirms nothing is left, end with what you need and nothing else:
+developer confirms nothing is left, ask for approval through the question tool
+(SKILL.md, Asking). Without one, end with what you need and nothing else:
 
 > Approve to write, or tell me what to change. I can also apply part of this and
 > leave the blocked items out.

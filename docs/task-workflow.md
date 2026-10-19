@@ -89,7 +89,8 @@ The questions, the approval and the push question come as multiple-choice
 prompts, the same ones plan mode uses, with a free-text answer always available:
 `AskUserQuestion` in Claude Code, `request_user_input` in Codex. Codex offers the
 latter outside Plan mode only with the `default_mode_request_user_input` feature
-on; without it, the questions come as numbered text.
+on; without it, the questions come as numbered text. `/prepare-task` asks its
+design questions and its approval the same way.
 
 **During the run**, an item is **blocked** when the builder hits a decision the
 brief doesn't make, the item turns out riskier than its gate, a check keeps
