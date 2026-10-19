@@ -188,8 +188,8 @@ Items run one at a time, in frontier order. For each item:
    build gets only the self-check, since the end-of-run review covers it. Clear
    corrections go to a **fixer**, run the way its item was built: a fresh
    builder subagent in fixer mode, given the findings, or inline. At most two
-   fix rounds per item;
-   still failing after that, the item is blocked. Run file: `reviewing`.
+   fix rounds per item; still failing after that, the item is blocked. Run
+   file: `reviewing`.
 5. **Commit** what is staged. Subject and body in the style of the repository's
    recent history (`git log -10 --format=%s`); a Notion item ends its message
    with the trailer `Task: <notion url>`. Hooks run; a failing hook is a fix
