@@ -25,12 +25,14 @@ Order: 1, 2, 3 (frontier first). Not in this run: <children left out, and why>.
 <one plan per plan item, in run order, each in the shape below>
 
 ### Questions
-Every open question of the run, numbered, each naming its item and what it
-blocks, with a recommendation.
-
-Approve to start the run, or tell me what to change. Go items need no approval
-but can be overruled here.
+Only without a question tool: every open question of the run, numbered, each
+naming its item and what it blocks, with a recommendation. Then: "Approve to
+start the run, or tell me what to change."
 ```
+
+With a question tool, the message ends at the last plan, and the questions and
+the approval follow through the tool (SKILL.md, Asking). Go items need no
+approval but can be overruled in the free-text answer.
 
 ## One plan
 
@@ -68,9 +70,9 @@ The tests to add or extend and the command that runs them, then two to four manu
 checks with URL and role.
 
 ### Open questions
-Only if any, and only in a single-item preflight; a run groups them under
-Questions. Unresolved items from the brief, each with what it blocks; the rest
-of the plan can proceed.
+Only if any, only in a single-item preflight, and only without a question tool;
+a run groups them under Questions. Unresolved items from the brief, each with
+what it blocks; the rest of the plan can proceed.
 
 ### Not doing
 OUT OF SCOPE from the brief, plus anything you noticed and deliberately left alone.

@@ -42,6 +42,30 @@ Plans, reports, run files and Notion comments in **English**. Product strings
 (labels, help texts, messages) are French and used verbatim. Commit messages
 follow the repository's own history.
 
+## Asking
+
+Every question to the human goes through the agent's **question tool**, the
+multiple-choice prompt of plan mode, which works without entering plan mode:
+`AskUserQuestion` in Claude Code, `request_user_input` in Codex (offered outside
+Plan mode only when the `default_mode_request_user_input` feature is on).
+Without it, ask in the message: numbered questions, each with its
+recommendation.
+
+- What the human must read comes first, in the message: the preflight, the
+  sub-task list, the report. The tool carries only the decisions, each question
+  self-contained: the item it concerns and what the answer changes.
+- Each option is a real choice with its consequence as its description, the
+  recommended one first, marked "(Recommended)". A free-text answer is always
+  available, so the options cover the likely answers, not every answer.
+- More questions than one call takes: ask in successive calls, in the order they
+  block the run, approval last.
+
+| Point | Question | Options |
+|---|---|---|
+| Phase B, a container | Which sub-tasks? | the frontier; the frontier and the blocked children it unblocks; everything not done. A custom list goes in the free-text answer. |
+| Phase E, the preflight | each open question, then "Start the run?" | start; revise (the free text says what) |
+| Phase G | Push N commits to `origin/<branch>`? | push; keep them local |
+
 ## Phase A — Read
 
 **Notion items.** Read `../prepare-task/references/notion-model.md` (the sibling
@@ -149,7 +173,8 @@ Record each classification and its reason in the run file.
   Phase F.
 - **Any plan item or open question:** write the **preflight**, one message for the
   whole run, following `templates/plan.md`: a plan for each plan item, one line
-  for each go item, every open question grouped at the end. Stay read-only
+  for each go item. Then ask every open question and the approval with the
+  question tool (Asking); without one, the questions close the message. Stay read-only
   until it is approved: the run file and the `info/exclude` line are the only
   writes allowed before then. Do not enter plan mode yourself, since it would
   block the run file. If the human has already turned it on, keep the run
