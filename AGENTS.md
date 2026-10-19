@@ -37,6 +37,21 @@ Omarchy laptop.
 - Prefer what is already installed, then project-local dependencies (composer,
   npm), then a standalone binary in `~/.local/bin`.
 
+## Viewing a local site from another machine
+
+When I ask for a URL to see a local site from another of my machines (for
+example a lerd site on the Omarchy laptop, viewed on the Mac), give me a
+Tailscale URL:
+
+- In the project folder, run `lerd lan:share`. It prints the site's port, which
+  stays the same across restarts.
+- Get the Tailscale IP with `tailscale ip -4` (the `100.x.x.x` address), and
+  give me `http://<tailscale-ip>:<port>`. Check it answers with `curl` first.
+  The proxy rewrites links and assets to whichever address is used.
+- Don't use `lerd share`: it opens a public internet tunnel. Ask first if I
+  need one.
+- `lerd lan:unshare` stops sharing.
+
 ## Communication
 
 - Write to me in English, even when the project is French. The UI, lang files,
