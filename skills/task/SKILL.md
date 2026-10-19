@@ -184,9 +184,11 @@ Items run one at a time, in frontier order. For each item:
 3. **Check the report.** Its first line is the contract. `STATUS: BLOCKED` → step
    8. `STATUS: READY` → confirm that `git diff --cached --name-only` matches the
    files it lists, and that nothing unrelated is staged.
-4. **Review** at the item's tier (`references/review.md`). Clear corrections go
-   to a **fixer**, run the way its item was built: a fresh builder subagent in
-   fixer mode, given the findings, or inline. At most two fix rounds per item;
+4. **Review** at the item's tier (`references/review.md`); the last item to
+   build gets only the self-check, since the end-of-run review covers it. Clear
+   corrections go to a **fixer**, run the way its item was built: a fresh
+   builder subagent in fixer mode, given the findings, or inline. At most two
+   fix rounds per item;
    still failing after that, the item is blocked. Run file: `reviewing`.
 5. **Commit** what is staged. Subject and body in the style of the repository's
    recent history (`git log -10 --format=%s`); a Notion item ends its message

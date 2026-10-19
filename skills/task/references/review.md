@@ -10,10 +10,14 @@ on the findings is how a run burns hours. Review once in depth, at the end.
 |---|---|---|
 | A go item, before its commit | The builder's self-check: checks green, every criterion met with evidence. Read the staged diff against the brief yourself. | 0 |
 | A plan item, before its commit | `review-code --quick --spec <run file>#<n>` (correctness and spec in one reviewer) | 1 |
+| The last item to build, before its commit | The self-check, as for a go item, whatever its gate | 0 |
 | End of run | Full `review-code <N> --spec <run file>` over the run's N commits, in the other model when possible | 0 to 4 |
 
-A run of a single go item still gets the end-of-run review. Skip it only when
-the human asked for no review.
+The per-item review protects the items built after it from a broken base. The
+last item to build (no selected item is still buildable after it) has none, and
+the end-of-run review covers the same diff with every lane, so a quick review
+before its commit only duplicates it. A run of a single item, go or plan, gets
+one review: the end-of-run one. Skip it only when the human asked for no review.
 
 `review-code` is a user-only skill, so a skill cannot invoke it by name. Read
 its installed `SKILL.md` and follow it with the arguments above. In Claude
