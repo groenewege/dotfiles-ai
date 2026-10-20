@@ -28,6 +28,9 @@ done
 EOF
 chmod +x "$hooks_dir/pre-push"
 
+# Workspace MCP servers need approval, and the amp CLI is only signed in at runtime.
+amp mcp approve laravel-boost >/dev/null || echo "laravel-boost MCP approval failed"
+
 # Pick up shared skill and instruction updates; skip quietly when offline.
 if timeout 5 git -C "$HOME/dotfiles-ai" pull --ff-only --quiet; then
 	"$repo_root/.agents/sync-ai-config"

@@ -177,8 +177,8 @@ install_boost() {
 }
 EOF
 	fi
+	# The amp CLI is not signed in during setup; .agents/resume approves the MCP server.
 	php artisan boost:install --guidelines --skills --mcp --no-interaction
-	amp mcp approve laravel-boost >/dev/null
 }
 
 install_dotfiles() {
