@@ -1,0 +1,202 @@
+#!/usr/bin/env bash
+# Prepares an Amp orb for this Laravel project: PHP 8.3, Composer, MySQL 8.0,
+# dependencies, development and testing databases, Laravel Boost and the shared
+# AI configuration from groenewege/dotfiles-ai. Must stay idempotent: Amp reruns
+# it on stale snapshots. Never start long-lived processes here; see .amp/services.yaml.
+set -euo pipefail
+
+PHP_VERSION=8.3
+MYSQL_SERIES=mysql-8.0
+DB_NAME=myproject # change per project
+DB_TEST_NAME=myproject_test # must match phpunit.xml
+DB_USER=laravel
+DB_PASSWORD=password # local-only development credential
+DOTFILES_REPO=https://github.com/groenewege/dotfiles-ai.git
+DOTFILES_DIR="$HOME/dotfiles-ai"
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+step() {
+	local name=$1
+	shift
+	local start=$SECONDS
+	echo "==> $name"
+	"$@"
+	echo "<== $name ($((SECONDS - start))s)"
+}
+
+install_system_packages() {
+	local packages=(
+		"php$PHP_VERSION-cli" "php$PHP_VERSION-bcmath" "php$PHP_VERSION-curl" "php$PHP_VERSION-gd"
+		"php$PHP_VERSION-intl" "php$PHP_VERSION-mbstring" "php$PHP_VERSION-mysql" "php$PHP_VERSION-readline"
+		"php$PHP_VERSION-sqlite3" "php$PHP_VERSION-xml" "php$PHP_VERSION-zip"
+		mysql-community-server mysql-community-client unzip
+	)
+	local missing=()
+	for package in "${packages[@]}"; do
+		dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -q 'install ok installed' || missing+=("$package")
+	done
+	[ ${#missing[@]} -eq 0 ] && return
+
+	# Refresh keys whenever something must be installed: MySQL republishes its
+	# signing key with a new expiry date under a new file name.
+	sudo install -d -m 0755 /etc/apt/keyrings
+	curl -fsSL https://packages.sury.org/php/apt.gpg | sudo tee /etc/apt/keyrings/sury-php.gpg >/dev/null
+	echo "deb [signed-by=/etc/apt/keyrings/sury-php.gpg] https://packages.sury.org/php/ bookworm main" |
+		sudo tee /etc/apt/sources.list.d/php.list >/dev/null
+	curl -fsSL https://repo.mysql.com/RPM-GPG-KEY-mysql-2025 | sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/mysql.gpg
+	echo "deb [signed-by=/etc/apt/keyrings/mysql.gpg] http://repo.mysql.com/apt/debian bookworm $MYSQL_SERIES" |
+		sudo tee /etc/apt/sources.list.d/mysql.list >/dev/null
+	# Empty root password: root authenticates through the local socket only.
+	echo "mysql-community-server mysql-community-server/root-pass password" | sudo debconf-set-selections
+	echo "mysql-community-server mysql-community-server/re-root-pass password" | sudo debconf-set-selections
+	sudo apt-get update -qq
+	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends "${missing[@]}"
+}
+
+install_composer() {
+	command -v composer >/dev/null 2>&1 && return
+	local tmp expected actual
+	tmp="$(mktemp -d)"
+	expected="$(curl -fsSL https://composer.github.io/installer.sig)"
+	curl -fsSL https://getcomposer.org/installer -o "$tmp/composer-setup.php"
+	actual="$(php -r "echo hash_file('sha384', '$tmp/composer-setup.php');")"
+	if [ "$expected" != "$actual" ]; then
+		echo "Composer installer checksum mismatch" >&2
+		exit 1
+	fi
+	sudo php "$tmp/composer-setup.php" --quiet --install-dir=/usr/local/bin --filename=composer
+	rm -rf "$tmp"
+}
+
+configure_mysql() {
+	# Orbs are disposable: trade durability for speed.
+	if [ ! -f /etc/mysql/conf.d/zz-amp-orb.cnf ]; then
+		sudo tee /etc/mysql/conf.d/zz-amp-orb.cnf >/dev/null <<'EOF'
+[mysqld]
+innodb_flush_log_at_trx_commit = 2
+sync_binlog = 0
+skip-log-bin
+EOF
+		sudo systemctl restart mysql
+	fi
+	sudo systemctl enable --now mysql >/dev/null 2>&1
+	for _ in $(seq 1 30); do
+		sudo mysqladmin ping --silent 2>/dev/null && break
+		sleep 1
+	done
+	sudo mysql <<SQL
+CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
+CREATE USER IF NOT EXISTS '$DB_USER'@'127.0.0.1' IDENTIFIED BY '$DB_PASSWORD';
+GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost', '$DB_USER'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON \`$DB_TEST_NAME\`.* TO '$DB_USER'@'localhost', '$DB_USER'@'127.0.0.1';
+SQL
+}
+
+prepare_env() {
+	[ -f .env ] && return
+	cp -- .env.example .env
+	sed -i \
+		-e "s/^DB_DATABASE=.*/DB_DATABASE=$DB_NAME/" \
+		-e "s/^DB_USERNAME=.*/DB_USERNAME=$DB_USER/" \
+		-e "s/^DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" \
+		.env
+}
+
+composer_auth_json() {
+	jq -cn --arg u "$SATIS_USERNAME" --arg p "$SATIS_PASSWORD" \
+		'{"http-basic": {"satis.filamentexamples.com": {username: $u, password: $p}}}'
+}
+
+# Agent shells need the same credentials for `composer require`. Only the
+# expression is written; the secret values stay in Amp's environment.
+export_composer_auth_in_profile() {
+	local marker="# Composer credentials from Amp secrets SATIS_USERNAME/SATIS_PASSWORD"
+	grep -Fqx "$marker" "$HOME/.bash_profile" 2>/dev/null && return
+	cat >>"$HOME/.bash_profile" <<EOF
+
+$marker
+if [ -n "\${SATIS_USERNAME:-}" ] && [ -n "\${SATIS_PASSWORD:-}" ]; then
+	export COMPOSER_AUTH="\$(jq -cn --arg u "\$SATIS_USERNAME" --arg p "\$SATIS_PASSWORD" '{"http-basic": {"satis.filamentexamples.com": {username: \$u, password: \$p}}}')"
+fi
+EOF
+}
+
+install_php_dependencies() {
+	if [ -z "${SATIS_USERNAME:-}" ] || [ -z "${SATIS_PASSWORD:-}" ]; then
+		echo "Set SATIS_USERNAME and SATIS_PASSWORD as Amp secrets (satis.filamentexamples.com credentials)." >&2
+		exit 1
+	fi
+	COMPOSER_AUTH="$(composer_auth_json)"
+	export COMPOSER_AUTH
+	composer install --no-interaction --no-progress --prefer-dist
+	grep -q '^APP_KEY=base64:' .env || php artisan key:generate --ansi
+}
+
+install_node_dependencies() {
+	# npm ci always wipes node_modules; install is a fast no-op when nothing changed.
+	# --no-save keeps package-lock.json untouched in the checkout.
+	npm install --no-save --no-audit --no-fund --loglevel=error
+	npm run build
+}
+
+# Migrates a database and seeds it only when it was just created, because the
+# seeders insert fixed rows and would fail on a second run.
+migrate_database() {
+	local database=$1
+	shift
+	local exists
+	exists="$(sudo mysql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$database' AND table_name = 'migrations'")"
+	sudo mysql -e "CREATE DATABASE IF NOT EXISTS \`$database\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+	if [ "$exists" = "0" ]; then
+		env "$@" DB_DATABASE="$database" php artisan migrate --seed --force --no-interaction
+	else
+		env "$@" DB_DATABASE="$database" php artisan migrate --force --no-interaction
+	fi
+}
+
+prepare_databases() {
+	php artisan config:clear --quiet
+	migrate_database "$DB_NAME"
+	# Mirrors phpunit.xml so test fixtures land on the separate testing media disk.
+	migrate_database "$DB_TEST_NAME" APP_ENV=testing MEDIA_DISK=testing
+	[ -L public/storage ] || php artisan storage:link --no-interaction
+}
+
+install_boost() {
+	# boost.json, AGENTS.md, .agents/skills and .amp/settings.json are gitignored
+	# so each developer chooses their own agents; generate them for Amp here.
+	if [ ! -f boost.json ]; then
+		cat >boost.json <<'EOF'
+{
+    "agents": ["amp"],
+    "guidelines": true,
+    "mcp": true,
+    "skills": []
+}
+EOF
+	fi
+	php artisan boost:install --guidelines --skills --mcp --no-interaction
+	amp mcp approve laravel-boost >/dev/null
+}
+
+install_dotfiles() {
+	if [ -d "$DOTFILES_DIR/.git" ]; then
+		git -C "$DOTFILES_DIR" pull --ff-only --quiet
+	else
+		git clone --quiet "$DOTFILES_REPO" "$DOTFILES_DIR"
+	fi
+	"$repo_root/.agents/sync-ai-config"
+}
+
+step "System packages" install_system_packages
+step "Composer" install_composer
+step "MySQL" configure_mysql
+step ".env" prepare_env
+step "Composer credentials in login shells" export_composer_auth_in_profile
+step "Composer dependencies" install_php_dependencies
+step "Node dependencies and build" install_node_dependencies
+step "Databases" prepare_databases
+step "Laravel Boost" install_boost
+step "Shared AI configuration" install_dotfiles

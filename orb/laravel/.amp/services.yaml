@@ -1,0 +1,16 @@
+services:
+  web:
+    command: >-
+      php artisan optimize:clear --quiet &&
+      APP_URL="$PUBLIC_URL" ASSET_URL="$PUBLIC_URL"
+      php artisan serve --host=0.0.0.0 --port="$PORT"
+    health: /up
+    portal:
+      url: /
+      title: Site
+    portals:
+      - url: /admin
+        title: Admin
+        description: Seeded login admin@example.com (password in database/seeders/UserSeeder.php).
+  queue:
+    command: php artisan queue:listen --tries=1 --timeout=0

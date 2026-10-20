@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Runs after activation and every wake. Must finish within seconds.
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+sudo mysqladmin ping --silent 2>/dev/null || sudo systemctl start mysql
+
+# staging and main deploy automatically. Amp points core.hooksPath at its own
+# hooks directory (repository hooks are ignored there) and may recreate it, so
+# install the guard next to Amp's hooks on every activation.
+hooks_dir="$(git config --global core.hooksPath || echo "$repo_root/.git/hooks")"
+mkdir -p "$hooks_dir"
+cat >"$hooks_dir/pre-push" <<'EOF'
+#!/usr/bin/env bash
+# Installed by .agents/resume.
+while read -r _ _ remote_ref _; do
+	case "$remote_ref" in
+	refs/heads/staging | refs/heads/main)
+		echo "Refusing to push to ${remote_ref#refs/heads/}. Push a feature branch or develop instead." >&2
+		exit 1
+		;;
+	esac
+done
+EOF
+chmod +x "$hooks_dir/pre-push"
+
+# Pick up shared skill and instruction updates; skip quietly when offline.
+if timeout 5 git -C "$HOME/dotfiles-ai" pull --ff-only --quiet; then
+	"$repo_root/.agents/sync-ai-config"
+else
+	echo "dotfiles-ai update skipped"
+fi
