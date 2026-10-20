@@ -18,6 +18,7 @@ plugins/             Claude plugins and Codex MCP servers, added by plugins.sh
 install.sh           link everything (--dry-run to preview)
 plugins.sh           add missing Claude plugins and Codex MCP servers
 adopt.sh <name>      move a skill an agent created into this repo
+orb/laravel/          Amp orb setup template for Laravel projects (see its README)
 ```
 
 Every link points into this repo, so editing `~/.claude/skills/<name>/SKILL.md`
@@ -43,6 +44,16 @@ git clone https://github.com/groenewege/dotfiles-ai.git ~/Code/dotfiles-ai
 ```
 
 The dotfiles repos of both machines do this for you.
+
+## Amp orbs
+
+Amp reads `~/.claude/skills`, so in an Amp orb the project's `.agents/setup`
+(copied from [orb/laravel](orb/laravel/README.md)) clones this repo to
+`~/dotfiles-ai`, runs `install.sh`, and writes `AGENTS.md` to
+`/home/user/workspace/AGENTS.md` with a short orb note on top. The orb's
+`.agents/resume` pulls this repo on every wake, so pushed changes reach orbs
+without a new snapshot. Notion comes from a personal remote MCP server named
+`notion` in Amp settings.
 
 ## Keeping the machines in sync
 

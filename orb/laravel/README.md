@@ -24,7 +24,7 @@ Then adapt per project:
 Amp settings (once per project):
 
 ```bash
-amp projects update <namespace/name> --base-branch develop --ship-behavior push-to-branch
+amp projects update <namespace/name> --base-branch develop   # Ship then merges into develop
 ```
 
 Store `SATIS_USERNAME` and `SATIS_PASSWORD` as **project** secrets: `.agents/setup`
