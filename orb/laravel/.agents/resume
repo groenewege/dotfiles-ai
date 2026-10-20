@@ -11,9 +11,12 @@ sudo mysqladmin ping --silent 2>/dev/null || sudo systemctl start mysql
 # install the guard next to Amp's hooks on every activation.
 hooks_dir="$(git config --global core.hooksPath || echo "$repo_root/.git/hooks")"
 mkdir -p "$hooks_dir"
-cat >"$hooks_dir/pre-push" <<'EOF'
+cat >"$hooks_dir/pre-push" <<EOF
 #!/usr/bin/env bash
-# Installed by .agents/resume.
+# Installed by .agents/resume. The hooks directory is global, so only guard this checkout.
+[ "\$(git rev-parse --show-toplevel)" = "$repo_root" ] || exit 0
+EOF
+cat >>"$hooks_dir/pre-push" <<'EOF'
 while read -r _ _ remote_ref _; do
 	case "$remote_ref" in
 	refs/heads/staging | refs/heads/main)
