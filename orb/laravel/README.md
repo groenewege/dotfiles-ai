@@ -27,5 +27,6 @@ Amp settings (once per project):
 amp projects update <namespace/name> --base-branch develop --ship-behavior push-to-branch
 ```
 
-Personal Amp settings shared by all projects: the `SATIS_USERNAME` and
-`SATIS_PASSWORD` secrets and the `notion` remote MCP server (OAuth via ampcode.com).
+Store `SATIS_USERNAME` and `SATIS_PASSWORD` as **project** secrets: `.agents/setup`
+does not receive personal secrets. The `notion` remote MCP server lives in personal
+settings (OAuth via ampcode.com) and works in every project.
