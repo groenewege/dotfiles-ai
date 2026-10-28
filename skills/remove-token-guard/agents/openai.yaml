@@ -1,0 +1,6 @@
+interface:
+  display_name: "Remove Token Guard"
+  short_description: "Remove Laravel's unused token auth guard (GHSA-f9x3-7vq9-cph6)"
+  default_prompt: "Use $remove-token-guard to remove the unused token guard from this Laravel project."
+policy:
+  allow_implicit_invocation: false
