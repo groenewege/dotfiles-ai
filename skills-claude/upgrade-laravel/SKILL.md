@@ -36,7 +36,7 @@ option first, marked "(Recommended)". The run stops for:
 | Point | Question |
 |---|---|
 | Preflight | anything the project guidelines don't give: admin credentials, the target if `$ARGUMENTS` is unclear |
-| Step 1 | Boost refuses the installed 10.x: bump `laravel/framework` within 10.x? |
+| Step 1 | Boost's install moves `laravel/framework` within 10.x: bump it? |
 | Step 2.4 | a fork has no compatibility branch and blocks `composer update` |
 | Step 2.6 | Merge Shift PR #n? merge; not yet (stop here, I'll check); problem (the free text says what) |
 | Step 5 | production runs a PHP other than 8.3; npm build output that has to change |
@@ -86,8 +86,12 @@ with its output.
 ## Step 1 — Boost
 
 1. `composer require laravel/boost --dev -W`: Composer picks the Boost release
-   that supports the installed Laravel. When it refuses because the framework
-   is below Boost's floor, ask before updating `laravel/framework` within 10.x.
+   that supports the installed Laravel. On Laravel 10 (and 11), Composer 2.9+
+   refuses every framework release over security advisories ("not loaded,
+   because they are affected by security advisories"), so add `--no-blocking`
+   to this one command. Run it with `--dry-run` first: when the plan upgrades
+   `laravel/framework` (Boost's floor is above the installed 10.x), ask before
+   running it for real.
 2. `php artisan boost:install` is interactive: ask the user to run it in their
    own terminal and choose Claude Code and Codex. Wait for their go.
 3. Commit what Boost generated that `.gitignore` doesn't exclude, then push.
@@ -112,6 +116,9 @@ major being installed.
    done; exit 1
    ```
    Timed out: tell the user and stop; the next invocation resumes here.
+   While it waits, run the fork branch check of 2.4 on the current
+   `composer.json`, so a fork that blocks major N is asked about before the
+   PR opens.
 4. **Review** with `/shift:review <n>`, applying `upgrade-laravel-N` as its
    checklist. Before `composer update` and again before its merge question,
    check the **forked packages**:
@@ -134,7 +141,10 @@ major being installed.
    result, the pages checked. Then ask "Merge Shift PR #n?". "Not yet" ends the
    session; the next invocation asks again.
 7. **Merge** with `shift:review`'s own merge procedure, which commits leftovers,
-   pushes and merges the PR into the upgrade branch. Then
+   pushes and merges the PR into the upgrade branch. Right after the push,
+   GitHub reports the PR as `UNKNOWN` mergeability and `gh pr merge` fails with
+   "Pull Request is not mergeable": poll `gh pr view <n> --json mergeable`
+   until it reads `MERGEABLE`, then merge. Then
    `git checkout <upgrade branch> && git pull`.
 8. **Refresh Boost** so the guidelines describe the new versions:
    `php artisan boost:update` (it reuses `boost.json`). When Shift moved Boost
@@ -160,10 +170,16 @@ locked property has a test asserting the tamper exception. Verify, then commit.
 
 When the suite prints PHPUnit deprecations or notices (e.g. `Metadata found in
 doc-comment`) and `phpunit/phpunit` is below 12, run the PHPUnit Shifts one
-major at a time (`PU11` from PHPUnit 10, then `PU12`), each through steps
-2.1 and 2.3–2.7. A Pest 4 project already runs PHPUnit 12.
+major at a time from the installed major, each through steps 2.1 and 2.3–2.7.
+The Laravel 12 Shift already moves PHPUnit to 11 and the Laravel 13 Shift
+keeps it there, so after step 2 this is usually `PU12` alone. It converts the
+doc-comment metadata (`/** @test */` → `#[Test]`) and bumps the constraint;
+run `composer update phpunit/phpunit -W`, then `vendor/bin/phpunit
+--migrate-configuration` (delete `phpunit.xml.bak`), since the Shift leaves
+`phpunit.xml` on the old schema. A Pest 4 project already runs PHPUnit 12.
 
-Done when the suite output has no PHPUnit deprecation or notice.
+Done when the suite output has no PHPUnit deprecation or notice and
+`phpunit.xml` names the installed major's schema.
 
 ## Step 5 — Fresh-machine install
 

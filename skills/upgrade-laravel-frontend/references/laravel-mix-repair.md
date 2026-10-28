@@ -16,11 +16,14 @@ Laravel Mix projects have `development` / `production` (aliases `dev` / `prod`),
 | 5.106.x | `Progress Plugin ... options object that does not match the API schema` (webpackbar's options rejected) |
 | ≥ 5.107 | `Cannot find module 'webpack/lib/SizeFormatHelpers'` (file removed) |
 
-Fix in `package.json`, so every nested copy dedupes to one version:
+Fix in `package.json`: pin the direct devDependency, and point the override at it with `$webpack` so every nested copy dedupes to the same version:
 
 ```json
-"overrides": { "webpack": "~5.105.4" }
+"devDependencies": { "webpack": "~5.105.4" },
+"overrides": { "webpack": "$webpack" }
 ```
+
+Mix projects list `webpack` as a direct devDependency (`^5.60.0` from the Mix 6 install). An override with its own range for a direct dependency fails `npm install` with `EOVERRIDE … conflicts with direct dependency`, so the range goes on the devDependency and the override only references it. Confirm with `npm ls webpack --all`: every copy is the pinned version.
 
 Verified October 2026 on Node 24 / npm 11. Before pinning on a later date, check `npm view laravel-mix version`: a newer Mix release may have lifted the incompatibility. The pin stays until the project moves to Vite.
 
