@@ -56,7 +56,8 @@ is already true is done, not redone.
    user writes it before the run), `CLAUDE.md`, and the project's memory for
    the test command, the local site URL, admin credentials and anything
    deferred "until the upgrade" (fold those into the matching step).
-3. **Boost**: `laravel/boost` in `composer.lock`, `boost.json` present.
+3. **Boost**: `laravel/boost` in `composer.lock`, `boost.json` present, and
+   none of step 1.3's files tracked (`git ls-files` on that list is empty).
 4. **Laravel major**: `composer show laravel/framework`. Shift PRs:
    `gh pr list --search "head:shift-" --state all --json number,headRefName,state,title`.
    An open PR means step 2 resumes at 2.4 for that Shift.
@@ -90,7 +91,7 @@ with its output.
 
 Only install Boost when it isn't installed yet. When `laravel/boost` is already
 in `composer.lock`, skip 1 (don't require, update or reinstall it); when
-`boost.json` exists too, skip the whole step and go to step 2.
+`boost.json` exists too, skip 2 as well. Step 3 always applies.
 
 1. `composer require laravel/boost --dev -W`: Composer picks the Boost release
    that supports the installed Laravel. On Laravel 10 (and 11), Composer 2.9+
@@ -101,11 +102,24 @@ in `composer.lock`, skip 1 (don't require, update or reinstall it); when
    running it for real.
 2. `php artisan boost:install` is interactive: ask the user to run it in their
    own terminal and choose Claude Code and Codex. Wait for their go.
-3. Commit what Boost generated that `.gitignore` doesn't exclude, then push.
-   Read `.gitignore` first: when the project ignores the other agents' Boost
-   output (`/.claude`, `/.cursor`, `CLAUDE.md`, `AGENTS.md`, `boost.json`),
-   ignore the folders Boost v2 adds for Codex the same way (`/.agents` for its
-   skills, `/.codex` for its MCP config) instead of committing them.
+3. Boost's generated files stay out of git. Append the lines of this list
+   that `.gitignore` lacks (newline-safely, as in `upgrade-laravel-11`):
+   ```
+   /.agents
+   /.ai/mcp
+   /.claude
+   /.codex
+   /.cursor
+   /.junie
+   .mcp.json
+   AGENTS.md
+   CLAUDE.md
+   boost.json
+   opencode.json
+   ```
+   `git rm --cached` any of them that is already tracked (the files stay on
+   disk). `git check-ignore -v .ai/guidelines/project.md` prints nothing. Commit
+   `.gitignore`, `composer.*` and `.ai/guidelines/`, then push.
 
 ## Step 2 — One Laravel major
 
