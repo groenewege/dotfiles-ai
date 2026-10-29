@@ -314,10 +314,25 @@ Its prompt: `$review-laravel-upgrade Review the <upgrade branch> branch.`
 - **Anywhere else** (a plain terminal, the desktop app): run it as a
   background Bash command, so you're notified when it exits:
   ```bash
-  codex exec -s workspace-write -C "$PWD" \
-    -o <scratchpad>/upgrade-review.md '<prompt>'
+  codex exec -s workspace-write -c sandbox_workspace_write.network_access=true \
+    -C "$PWD" -o <scratchpad>/upgrade-review.md '<prompt>'
   ```
+  The network setting is what lets the review run the suite. `codex exec`
+  always runs with approval `never` (a `-c approval_policy` override is
+  ignored), so the allow-list in `~/.codex/rules/default.rules` (`php artisan`,
+  `mysql -h 127.0.0.1`, `composer audit`, …) doesn't apply: that list only
+  takes effect in an interactive session, where Codex may request escalation.
+  The default `workspace-write` sandbox has no network, and macOS's sandbox
+  then blocks TCP connections to MySQL on `127.0.0.1:3306`. Every test, and
+  `migrate:fresh`, fails with `SQLSTATE[HY000] [2002] Operation not
+  permitted`, and `composer audit` / `outdated` can't resolve DNS. With
+  network on, the sandbox still limits writes to the project, `/tmp` and
+  `$TMPDIR`. The Herdr route is interactive and uses the rules, so it needs
+  nothing extra.
 - `codex` not installed or not logged in: say so in the hand-off and skip.
+- When the report says the tests "stopped before assertions" with that
+  `Operation not permitted` error, the sandbox blocked the database, not the
+  code: say so, and point to your own green run from step 6.
 
 Don't wait for it: give the hand-off right away. When it finishes, tell the
 user it's done and where the report is (`upgrade-review-report.html`). Don't
