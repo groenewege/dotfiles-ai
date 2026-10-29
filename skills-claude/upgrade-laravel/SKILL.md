@@ -1,6 +1,6 @@
 ---
 name: upgrade-laravel
-description: Upgrade a Laravel project one major at a time (10 → 11 → 12 → 13 by default) with Laravel Shift, Boost and the upgrade-laravel-* skills, with tests, a browser check and my approval before each merge; then Livewire hardening, PHPUnit notices, fresh-machine install, production .env values and the token guard fix. Run it again to continue where the last session stopped.
+description: Upgrade a Laravel project one major at a time (10 → 11 → 12 → 13 by default) with Laravel Shift, Boost and the upgrade-laravel-* skills, with tests, a browser check and my approval before each merge; then Livewire hardening, PHPUnit notices, fresh-machine install, production .env values and the token guard fix, then a Codex review of the branch. Run it again to continue where the last session stopped.
 argument-hint: "[target major, default 13]"
 disable-model-invocation: true
 ---
@@ -36,7 +36,7 @@ option first, marked "(Recommended)". The run stops for:
 | Point | Question |
 |---|---|
 | Preflight | anything the project guidelines don't give: admin credentials, the target if `$ARGUMENTS` is unclear |
-| Step 1 | Boost's install moves `laravel/framework` within 10.x: bump it? |
+| Step 1 | Boost isn't installed yet and its install moves `laravel/framework` within 10.x: bump it? |
 | Step 2.4 | a fork has no compatibility branch and blocks `composer update` |
 | Step 2.6 | Merge Shift PR #n? merge; not yet (stop here, I'll check); problem (the free text says what) |
 | Step 5 | production runs a PHP other than 8.3; npm build output that has to change |
@@ -49,7 +49,8 @@ environment, print it as a checklist (done / to do), and continue at the first
 item still to do. "Some of it may already be in place" is normal: an item that
 is already true is done, not redone.
 
-1. **Branch**: on the upgrade branch, `git status --porcelain` empty, in sync
+1. **Branch**: on the upgrade branch, `git status --porcelain` empty (an
+   untracked `upgrade-review-report.html` from step 9 doesn't count), in sync
    with `origin` (`git fetch` first). Not on one: ask which branch to use.
 2. **Project context**: read `.ai/guidelines/project.md` (it must exist; the
    user writes it before the run), `CLAUDE.md`, and the project's memory for
@@ -66,6 +67,8 @@ is already true is done, not redone.
    `composer.json` has `config.platform.php`. The fresh-copy check of step 5
    is always run again before step 6.
 8. **Token guard**: a guard with `'driver' => 'token'` in `config/auth.php`.
+9. **Codex review**: `upgrade-review-report.html` in the project root, newer
+   than the branch's last commit.
 
 ## Verify
 
@@ -84,6 +87,10 @@ with its output.
    the report.
 
 ## Step 1 — Boost
+
+Only install Boost when it isn't installed yet. When `laravel/boost` is already
+in `composer.lock`, skip 1 (don't require, update or reinstall it); when
+`boost.json` exists too, skip the whole step and go to step 2.
 
 1. `composer require laravel/boost --dev -W`: Composer picks the Boost release
    that supports the installed Laravel. On Laravel 10 (and 11), Composer 2.9+
@@ -236,6 +243,31 @@ derived.
 2. Read `~/.claude/skills/remove-token-guard/SKILL.md` and follow it on the
    upgrade branch.
 
+## Step 9 — Codex review
+
+Once steps 1–8 are done and pushed, a Codex agent runs the
+`review-laravel-upgrade` skill on the upgrade branch, apart from this session.
+Its prompt: `$review-laravel-upgrade Review the <upgrade branch> branch.`
+
+- **In Herdr** (`HERDR_ENV=1`): load the `herdr` skill and follow "Start and
+  coordinate an agent": a sibling pane with `--no-focus` in the project folder,
+  `herdr agent start upgrade-review --kind codex`, then `herdr agent prompt
+  upgrade-review '<prompt>' --wait` as a background Bash command, so you're
+  notified when it settles. `blocked` means Codex is waiting for the user in
+  that pane: say so.
+- **Anywhere else** (a plain terminal, the desktop app): run it as a
+  background Bash command, so you're notified when it exits:
+  ```bash
+  codex exec -s workspace-write -C "$PWD" \
+    -o <scratchpad>/upgrade-review.md '<prompt>'
+  ```
+- `codex` not installed or not logged in: say so in the hand-off and skip.
+
+Don't wait for it: give the hand-off right away. When it finishes, tell the
+user it's done and where the report is (`upgrade-review-report.html`). Don't
+implement, fix or commit anything it recommends; the findings are the user's
+to act on.
+
 ## Hand-off
 
 End the run with:
@@ -244,5 +276,5 @@ End the run with:
 - the production `.env` block from step 7;
 - the manual checks still to do (PDF output, mail, cron jobs, anything the
   tests and the browser pass didn't reach);
-- an offer to run `review-laravel-upgrade` before the branch is merged;
+- that the Codex review of step 9 is running, and where its report will be;
 - a reminder that merging into develop, and deploying, is the user's call.
