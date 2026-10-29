@@ -4,7 +4,9 @@ Mix-specific fixes for the repair path. The fresh-copy regeneration and verifica
 
 ## Point scripts at npm scripts that exist
 
-Laravel Mix projects have `development` / `production` (aliases `dev` / `prod`), not Vite's `build`. Fix every caller (`composer.json` `scripts.setup`, CI, deploy scripts, README) to use `npm run production`, or add a `"build": "npm run production"` alias if the user prefers.
+Laravel Mix projects have `development` / `production` (aliases `dev` / `prod`), not Vite's `build`. Fix every caller (`composer.json` `scripts.setup`, CI, deploy scripts, README) to use `npm run production`, or add a `"build": "npm run production"` alias if the user prefers. The Laravel 12 Shift adds a `composer run setup` that ends in `npm run build`, so a Mix project always has at least this caller.
+
+**`php artisan dev` runs `npm run dev`.** On Laravel 13, Shift's `composer run dev` calls `@php artisan dev`, whose default process list (`php artisan dev:list`) starts `npm run dev` as the asset watcher next to `serve`, `pail` and Horizon. A Mix project usually has no `dev` script, only `development` / `watch`. Add `"dev": "mix watch"`: the process is meant to stay running, like `vite`, and a one-shot `mix` build would exit straight away. Check with `php artisan dev:list` that the `vite` row now points at a script that exists.
 
 ## Pin webpack for Mix 6
 

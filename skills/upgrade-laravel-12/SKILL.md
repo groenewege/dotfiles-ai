@@ -229,6 +229,7 @@ protected function hasMatching(Builder $query): Builder { /* ... */ }
 ],
 ```
 
+**Shift's reset `config/filesystems.php` adds `'serve' => true` to the `local` disk, and with it two routes**: `GET storage/{path}` and `PUT storage/{path}`. They're expected in the before/after route diff, not a regression. Both refuse requests without a valid signature (403 locally, 404 in production; `ServeFile` and `ReceiveFile` check `hasValidRelativeSignature()` unless the disk's `visibility` is `public`). They only serve or accept files for URLs the app signs with `Storage::disk('local')->temporaryUrl()` / `temporaryUploadUrl()`. Confirm with `curl -s -o /dev/null -w "%{http_code}" -X PUT <app-url>/storage/x` (403) and keep Shift's change. If the `local` root is still `storage/app` (above), the `public` disk's symlinked files under `storage/app/public` sit inside that root too, and only signed URLs reach them through this route.
 ### Multi-Schema Database Inspecting
 
 `Schema::getTables()`, `Schema::getViews()`, and `Schema::getTypes()` now return results from all schemas by default. Filter with the `schema` argument:

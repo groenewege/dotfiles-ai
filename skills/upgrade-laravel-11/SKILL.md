@@ -107,6 +107,32 @@ $this->assertSame(
 );
 ```
 
+### Rehash-on-login saves the user and moves `updated_at`
+
+Laravel 11 turns on `hashing.rehash_on_login`. After every successful login, `EloquentUserProvider::rehashPasswordIfRequired()` checks `needsRehash()` and, when the stored hash's cost differs from the current one, runs `forceFill([...])->save()` on the user. That save bumps `updated_at`.
+
+A cost mismatch is the normal state after the upgrade:
+- **Production:** Shift deletes `config/hashing.php`, which held `env('BCRYPT_ROUNDS', 10)`. Without the env var, the framework default is 12, so every existing cost-10 hash gets rehashed on its next login.
+- **Tests:** `phpunit.xml` sets `BCRYPT_ROUNDS=4`, while seeders (run through `.env.testing`) hash at 10, so every test login rehashes.
+
+That's harmless unless the app reads `updated_at` as a business signal: a "last profile update" date, a yearly re-confirmation prompt, an activity filter. Then every login silently resets it. The **tell** is a test asserting that a login leaves `updated_at` unchanged. Seen on a real upgrade, where `updated_at` drove an annual student prompt: the test failed with `'2025-01-01 00:00:00'` expected and the login time received.
+
+Grep for `updated_at` in app logic, scopes and views. If anything relies on it, restore the L10 behaviour with a minimal `config/hashing.php` (`hashing` isn't a deep-merged config, so list only this key):
+
+```php
+return [
+    'rehash_on_login' => false, // a rehash saves the user and touches updated_at
+];
+```
+
+Setting `BCRYPT_ROUNDS` to the old cost in every environment is a second, weaker fix, because one environment that misses it reopens the problem. Add a config test asserting `config('hashing.rehash_on_login')` is false.
+
+### Shift's test-name converter renames helpers that start with `test`
+
+Shift's "Laravel coding style" commit snake-cases test methods (`testFoo` → `test_foo`). It matches on the name, not on visibility, so a **protected helper** such as `testChainId()` becomes `test_chain_id()` while its callers keep calling `$this->testChainId()`. The tell is `Call to undefined method Tests\Feature\XTest::testChainId()` in a handful of tests in one file.
+
+Rename the helper to something that doesn't start with `test` (e.g. `seededChainId()`) and update the callers. Restoring the camelCase name would only be renamed again by the next Shift (PU12 converts test names too). Grep for leftovers with `grep -rnE "function test[A-Z_]\w*\(" tests | grep -v "public function"`.
+
 ## Package Incompatibilities (audit `composer.json`)
 
 Some packages cap at `illuminate/* ^10` and block `composer update`. Resolve each before assuming a framework conflict:
@@ -474,7 +500,7 @@ Laravel 11 auto-rehashes passwords on login. If your password column isn't named
 protected $authPasswordName = 'custom_password_field';
 ```
 
-Or disable with `'rehash_on_login' => false` in `config/hashing.php`.
+Or disable with `'rehash_on_login' => false` in `config/hashing.php`. Each rehash saves the user and bumps `updated_at`: read "Rehash-on-login saves the user and moves `updated_at`" above before leaving it on.
 
 ## New v11 Structure (for new projects only)
 

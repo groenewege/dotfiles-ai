@@ -156,6 +156,19 @@ $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $retrie
 
 Note: the test suite's default `array` store is `'serialize' => false`, so you must request a serializing store (`file`) explicitly — a test left on the default store will pass even when production is broken.
 
+**List the classes from the payload itself.** Re-run each cached closure's query and read the class names out of its serialized form. Every object in the graph appears as `O:<len>:"<class>"`, custom collections and pivots included:
+
+```php
+// php artisan tinker --execute 'require "<scratchpad>/classes.php";'
+// (`tinker <file>` opens an interactive shell after the file and hangs a non-interactive run)
+foreach (['categories_main' => Category::with([...])->get(), /* one entry per Cache::remember */] as $key => $value) {
+    preg_match_all('/O:\d+:"([^"]+)"/', serialize($value), $m);
+    echo $key, ': ', implode(', ', array_unique($m[1])), PHP_EOL;
+}
+```
+
+The union of those lists is the allow-list. A real run found `Illuminate\Database\Eloquent\Relations\Pivot`, which reasoning through the relations had missed. A value that prints no class (e.g. a `pluck()->toArray()` list) needs no entry. Then guard it with the file-store round-trip test above, asserting `serialize($retrieved)` contains no `__PHP_Incomplete_Class`.
+
 **The allow-list must contain EVERY class in the serialized object graph — including non-obvious custom collection types.** A missing nested class still yields `__PHP_Incomplete_Class`. Gotchas seen in the wild:
 
 - **Models whose trait overrides `newCollection()` return a custom collection class, not the base one.** `staudenmeir/laravel-adjacency-list`'s `HasRecursiveRelationships` makes `Model::get()` return `Staudenmeir\LaravelAdjacencyList\Eloquent\Collection` — so allow-listing `Illuminate\Database\Eloquent\Collection` is *not* enough. Baum nested-set models (`gazsp/baum`, `extends Baum\Node`) do the same: `Page::where(...)->get()` returns `Baum\Extensions\Eloquent\Collection`, so a cached menu needs that class plus the model. The round-trip above prints the actual runtime class to add.
@@ -471,7 +484,9 @@ REDIS_PREFIX=acme_reseaux_dinvestigateurs_database_
 SESSION_COOKIE=acme_reseaux_dinvestigateurs_session
 ```
 
-A single accented character is enough to trigger it — a second real case: `APP_NAME="XYZ Paris Université"` → v13 cookie `x_y_z_paris_université_session` (v12: `xyz_paris_universite_session`). Derive the pinned values **per environment** with `Str::slug(config('app.name'), '_')`: `.env.testing` often has a different `APP_NAME` (here `"XYZ Paris"` → `xyz_paris_*`), so copying the `.env` values into it would silently change its prefixes.
+A single accented character is enough to trigger it — a second real case: `APP_NAME="XYZ Paris Université"` → v13 cookie `x_y_z_paris_université_session` (v12: `xyz_paris_universite_session`). Derive the pinned values **per environment** with `Str::slug(env('APP_NAME', 'laravel'), '_')`: `.env.testing` often has a different `APP_NAME` (here `"XYZ Paris"` → `xyz_paris_*`), so copying the `.env` values into it would silently change its prefixes.
+
+**Derive from the environment's `.env`, not from `config('app.name')`.** The v12 formulas read `env('APP_NAME', 'laravel')` directly. When the app name lives only in `config/app.php` (`'name' => env('APP_NAME', 'Acme')`) and an environment's `.env` doesn't set `APP_NAME`, that environment derived `laravel_cache_`, `laravel_database_` and `laravel_session`. The config default never reached these values. Real case: the production name "Antibioclic" was only in the config file, so production's pins were `laravel_*`, not `antibioclic_*`. Ask whether each environment's `.env` sets `APP_NAME` (`grep APP_NAME .env` on the server) before computing its pins.
 
 ### Shift PR Comments That Are Often No-Ops (verify, don't blindly act)
 

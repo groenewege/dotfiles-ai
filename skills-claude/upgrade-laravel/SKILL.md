@@ -40,7 +40,7 @@ option first, marked "(Recommended)". The run stops for:
 | Step 2.4 | a fork has no compatibility branch and blocks `composer update` |
 | Step 2.6 | Merge Shift PR #n? merge; not yet (stop here, I'll check); problem (the free text says what) |
 | Step 5 | production runs a PHP other than 8.3; npm build output that has to change |
-| Step 7 | production's `APP_NAME` |
+| Step 7 | production's `.env` `APP_NAME` (or that it isn't set there) |
 
 ## Where the run stands
 
@@ -102,6 +102,10 @@ in `composer.lock`, skip 1 (don't require, update or reinstall it); when
 2. `php artisan boost:install` is interactive: ask the user to run it in their
    own terminal and choose Claude Code and Codex. Wait for their go.
 3. Commit what Boost generated that `.gitignore` doesn't exclude, then push.
+   Read `.gitignore` first: when the project ignores the other agents' Boost
+   output (`/.claude`, `/.cursor`, `CLAUDE.md`, `AGENTS.md`, `boost.json`),
+   ignore the folders Boost v2 adds for Codex the same way (`/.agents` for its
+   skills, `/.codex` for its MCP config) instead of committing them.
 
 ## Step 2 — One Laravel major
 
@@ -151,12 +155,18 @@ major being installed.
    pushes and merges the PR into the upgrade branch. Right after the push,
    GitHub reports the PR as `UNKNOWN` mergeability and `gh pr merge` fails with
    "Pull Request is not mergeable": poll `gh pr view <n> --json mergeable`
-   until it reads `MERGEABLE`, then merge. Then
+   until it reads `MERGEABLE`, then merge. Right after the previous Shift's
+   merge, `gh pr merge` can also fail with "Base branch was modified" while
+   the PR reads `MERGEABLE`/`CLEAN`. That's transient: confirm with
+   `git fetch` that the base has no commit you haven't seen, wait a few
+   seconds and merge again. Confirm `gh pr view <n> --json state` reads
+   `MERGED` before checking out the upgrade branch. Then
    `git checkout <upgrade branch> && git pull`.
 8. **Refresh Boost** so the guidelines describe the new versions:
    `php artisan boost:update` (it reuses `boost.json`). When Shift moved Boost
    to a new major, or `boost:update` doesn't exist, the user runs
-   `php artisan boost:install` again (Claude Code and Codex). Commit and push.
+   `php artisan boost:install` again (Claude Code and Codex). Commit and push,
+   applying step 1.3's rule to the folders the new major adds.
 
 Done when `composer show laravel/framework` reports the target major, every
 Shift PR is merged, and Boost is refreshed.
@@ -223,9 +233,15 @@ Laravel 13 derives the default cache prefix, Redis prefix and session cookie
 differently (see `upgrade-laravel-13`), so production pins the values Laravel 12
 derived.
 
-1. Ask for production's `APP_NAME`; offer the local `.env` value as one option.
+1. Ask whether production's `.env` sets `APP_NAME`, and to what. Master's
+   formulas read `env('APP_NAME', 'laravel')`, not `config('app.name')`. An app
+   whose name lives only in `config/app.php` (`'name' => env('APP_NAME', 'Acme')`)
+   derived `laravel_*` in production, whatever the config file says. Offer the
+   local `.env` value and "not set in `.env`" as options, and suggest checking
+   with `grep APP_NAME .env` on the server.
 2. Compute the values with master's formulas (`git show origin/master:config/cache.php`,
-   `config/database.php`, `config/session.php`), usually:
+   `config/database.php`, `config/session.php`), usually, with `laravel` as
+   `<APP_NAME>` when `.env` doesn't set it:
    ```bash
    php artisan tinker --execute '$s = Illuminate\Support\Str::slug("<APP_NAME>", "_");
    echo "CACHE_PREFIX={$s}_cache_\nREDIS_PREFIX={$s}_database_\nSESSION_COOKIE={$s}_session\n";'
