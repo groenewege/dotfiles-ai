@@ -26,6 +26,9 @@ invocation therefore starts by working out where the run stands.
 - Shift's changes stay as they are. When one looks wrong, flag it in the report
   (`shift:review` says the same).
 - The reports are in English; UI strings, lang files and seed data stay French.
+- The remote isn't always called `origin` (one project uses `github`): check
+  `git remote -v` and read `origin` below, and in the `shift:*` skills, as that
+  remote.
 
 ## Asking
 
@@ -80,12 +83,21 @@ with its output.
 1. `php artisan config:clear && php artisan view:clear`.
 2. `php artisan migrate:fresh --seed --env=testing`, then the project's test
    command (`php artisan test --compact` unless the guidelines say otherwise).
+   On Laravel 10, Collision 6 has no `--compact` ("Unknown option"): run plain
+   `php artisan test` until the Laravel 11 Shift is merged.
 3. Browser pass with Claude in Chrome (load the `claude-in-chrome` skill first)
    on the local site: `APP_URL`, or `http://<folder>.test` under Valet. Frontend:
    the home page, each main section from the navigation, one form. Admin: log
    in, the dashboard, one list, one edit form. On every page, check the layout
    (styles and scripts loaded) and the console for errors. List the pages in
    the report.
+   - A JavaScript `fetch()` sweep over the URLs is quicker than visiting each
+     page. Claude in Chrome withholds a script result that contains a URL with
+     a query string (`[BLOCKED: Cookie/query string data]`), so check search
+     pages by typing into the search box instead.
+   - Search showing no results isn't necessarily a regression: a local `.env`
+     with `SCOUT_DRIVER=null` returns nothing for every query. Check `.env`
+     before debugging Scout.
 
 ## Step 1 — Boost
 
@@ -220,10 +232,13 @@ A clone on another machine must install and build without changing anything.
    committed. `git check-ignore -v .ai/guidelines/project.md` prints nothing;
    commit `.ai/guidelines/`.
 2. **PHP**: pin the platform so another machine resolves the same packages:
-   `"config": { "platform": { "php": "8.3" } }` and `"php": "^8.3"` in
-   `require`, unless production runs another PHP (ask). Then
-   `composer update --lock`; when locked packages require a newer PHP
-   (Symfony 8 needs 8.4), `composer update <those packages> -W` and Verify.
+   `"config": { "platform": { "php": "8.3.1" } }` and `"php": "^8.3"` in
+   `require`, unless production runs another PHP (ask). Pin a patch release:
+   `"8.3"` means exactly 8.3.0, which some packages exclude
+   (`algolia/algoliasearch-client-php` 4.x requires `>=8.1 !=8.3.0`), and
+   `composer update --lock` then fails. Then `composer update --lock`; when
+   locked packages require a newer PHP (Symfony 8 needs 8.4),
+   `composer update <those packages> -W` and Verify.
 3. **npm**: follow the `upgrade-laravel-frontend` skill, step 4 "Repair the
    current tools". Its step 2 question is already answered: keep the current
    asset tooling. Committed build output (`public/css`, `public/js`,
@@ -260,10 +275,21 @@ derived.
    php artisan tinker --execute '$s = Illuminate\Support\Str::slug("<APP_NAME>", "_");
    echo "CACHE_PREFIX={$s}_cache_\nREDIS_PREFIX={$s}_database_\nSESSION_COOKIE={$s}_session\n";'
    ```
-3. Show one block of lines to add to production's `.env`: these three, the
-   variables Shift's PR comments asked to set, and the production values from
-   the env table in `upgrade-laravel-11` (e.g. `LOG_STACK`). Mark which ones
-   replace an old name (`CACHE_DRIVER` → `CACHE_STORE`).
+3. Compare the drivers. Once Shift removes a config file, the framework's own
+   default applies wherever production's `.env` doesn't set the variable, and
+   those defaults differ from the old skeleton's. For each of `session.driver`,
+   `queue.default`, `database.default`, `mail.default` and `cache.default`,
+   compare master's fallback (`git show origin/master:config/<file>.php`) with
+   `vendor/laravel/framework/config/<file>.php`. On Laravel 13 the framework
+   uses `database` for sessions, queue and cache, `sqlite` for the database and
+   `log` for mail, where master usually had `file`, `sync`, `mysql` and `smtp`.
+   A production `.env` that never set these then fails on every request
+   (missing `sessions` table) or stops sending mail. Pin each one that differs.
+4. Show one block of lines to add to production's `.env`: the three values
+   above, the drivers from 3, the variables Shift's PR comments asked to set,
+   and the production values from the env table in `upgrade-laravel-11`
+   (e.g. `LOG_STACK`). Mark which ones replace an old name (`CACHE_DRIVER` →
+   `CACHE_STORE`).
 
 ## Step 8 — Token guard
 

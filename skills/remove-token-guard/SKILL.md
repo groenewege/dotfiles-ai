@@ -72,7 +72,10 @@ tests: PHPUnit or Pest, the same attributes or annotations, the same traits.
 1. Run the new test.
 2. `php artisan migrate:fresh --seed --env=testing`, then the full suite.
 3. `php artisan route:list --path=api` doesn't list `api/user`, and
-   `php artisan config:show auth.guards` still shows `web`.
+   `php artisan config:show auth.guards` still shows `web`. `--path` matches
+   anywhere in the URI, so it also lists routes such as
+   `depressif/depistage-rapide/{uuid}`: check that none of them starts with
+   `api/` rather than expecting an empty list.
 
 Done when all three hold; report failures with their output.
 
