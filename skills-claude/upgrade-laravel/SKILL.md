@@ -95,6 +95,17 @@ with its output.
      page. Claude in Chrome withholds a script result that contains a URL with
      a query string (`[BLOCKED: Cookie/query string data]`), so check search
      pages by typing into the search box instead.
+   - Check each fetched page's text for errors with `<script>`, `<style>` and
+     `.phpdebugbar` removed first: Debugbar injects a script containing
+     "Exception", which flags every page. With `redirect: 'manual'`, a
+     redirect reads as status 0 (`/login` while logged in), not as a failure.
+   - **In T3 Code** Claude in Chrome isn't connected: use T3's preview tools
+     (`preview_open`, `preview_act`, `preview_evaluate`, `t3_preview_close`).
+     The `default` profile keeps its session between passes, so do the guest
+     login in a tab opened with `profileId: "incognito"`. `preview_snapshot`
+     drops console entries once its output is full: check
+     `performance.getEntriesByType('resource')` for a `responseStatus` of 400
+     or more, and that the page's libraries loaded (`jQuery`, `Foundation`, …).
    - Search showing no results isn't necessarily a regression: a local `.env`
      with `SCOUT_DRIVER=null` returns nothing for every query. Check `.env`
      before debugging Scout.
@@ -180,8 +191,11 @@ major being installed.
 7. **Merge** with `shift:review`'s own merge procedure, which commits leftovers,
    pushes and merges the PR into the upgrade branch. Right after the push,
    GitHub reports the PR as `UNKNOWN` mergeability and `gh pr merge` fails with
-   "Pull Request is not mergeable": poll `gh pr view <n> --json mergeable`
-   until it reads `MERGEABLE`, then merge. Right after the previous Shift's
+   "Pull Request is not mergeable": poll `gh pr view <n> --json
+   mergeable,headRefOid` until `headRefOid` equals the SHA you pushed and
+   `mergeable` reads `MERGEABLE`, then merge. The first poll can still return
+   `MERGEABLE` computed for the commit before the push; a merge on that stale
+   answer fails the same way. Right after the previous Shift's
    merge, `gh pr merge` can also fail with "Base branch was modified" while
    the PR reads `MERGEABLE`/`CLEAN`. That's transient: confirm with
    `git fetch` that the base has no commit you haven't seen, wait a few
@@ -220,6 +234,9 @@ doc-comment metadata (`/** @test */` → `#[Test]`) and bumps the constraint;
 run `composer update phpunit/phpunit -W`, then `vendor/bin/phpunit
 --migrate-configuration` (delete `phpunit.xml.bak`), since the Shift leaves
 `phpunit.xml` on the old schema. A Pest 4 project already runs PHPUnit 12.
+To find metadata the Shift missed, grep doc-comment lines only
+(`grep -rnE '^\s*(/\*\*|\*).*@(test|dataProvider|depends|group)\b' tests`):
+a bare `@test` grep also matches email addresses such as `user@test.com`.
 
 Done when the suite output has no PHPUnit deprecation or notice and
 `phpunit.xml` names the installed major's schema.
