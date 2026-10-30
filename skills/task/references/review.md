@@ -30,9 +30,36 @@ read-only: the fixer applies the corrections, not the reviewer.
 
 ## The other model
 
-A review by a different model catches what the builder's model is blind to. It
-runs through the other agent's CLI, which works the same in a terminal, Herdr or
-T3 Code. Start it in the background; it takes minutes.
+A review by a different model catches what the builder's model is blind to.
+Start it in the background; it takes minutes. In T3 Code it runs as a T3
+delegate; anywhere else (a terminal, Herdr), through the other agent's CLI.
+
+### In T3 Code
+
+The `t3-code` MCP server's `delegate_task` tool is the sign: when it is
+available, launch the review with it rather than with the CLI. The review then
+gets its own thread in T3, and T3 wakes this session when it finishes.
+
+1. Call `orchestrator_capabilities` once and find the other provider:
+   `codex` from Claude Code, `claudeAgent` from Codex. It needs
+   `canRunCrossProviderChildTask: true`.
+2. Call `delegate_task` with:
+   - `task`: `$review-code <N> --spec <run file>. Review only: the files and
+     the Git history stay as they are. Do not write the HTML report: return the
+     full report as your final message.` For Claude, `/review-code` instead of
+     `$review-code`. The delegate gets none of this session's history: the
+     prompt and the run file are all it knows.
+   - `target`: `{"providerInstanceId": "<other provider>"}`. The provider's
+     default model, unless the human named one.
+   - `role`: `review`; `title`: `Review <run slug>`; `mode`: `async`. The
+     default `shared` isolation, so it reviews this checkout.
+3. Carry on without polling. When T3 wakes you, read the result once with
+   `task_status` and write its `summary` to `.task-runs/<run slug>-review.md`.
+
+T3's runtime modes are not read-only, so the prompt is what keeps the reviewer
+from editing.
+
+### Through the CLI
 
 From Claude Code:
 
@@ -57,8 +84,9 @@ sandbox.
 Keep the single quotes: they stop the shell from expanding `$review-code`. The
 spec is passed as the run file, so the reviewer needs no Notion access.
 
-If the other CLI is missing, not logged in, or fails, run `review-code` in this
-session instead, and say which model reviewed.
+If the other provider is missing from T3's list, or its CLI is missing or not
+logged in, or the review fails, run `review-code` in this session instead, and
+say which model reviewed.
 
 ## Handling findings
 

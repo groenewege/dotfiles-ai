@@ -311,6 +311,16 @@ Its prompt: `$review-laravel-upgrade Review the <upgrade branch> branch.`
   upgrade-review '<prompt>' --wait` as a background Bash command, so you're
   notified when it settles. `blocked` means Codex is waiting for the user in
   that pane: say so.
+- **In T3 Code** (the `t3-code` MCP server's `delegate_task` tool is
+  available): launch it as a T3 delegate, which gets its own thread in T3.
+  Call `orchestrator_capabilities` once and check that the `codex` provider
+  has `canRunCrossProviderChildTask: true`. Then `delegate_task` with `task`:
+  the prompt; `target`: `{"providerInstanceId": "codex"}` (its default model);
+  `role`: `review`; `title`: `Upgrade review`; `mode`: `async`; and the
+  default `shared` isolation, so it reviews this checkout. The delegate gets
+  none of this session's history: the prompt is all it knows. Leave
+  `runtimeMode` out so it inherits this session's. T3 wakes this session when
+  it finishes: read the result then, once, with `task_status`.
 - **Anywhere else** (a plain terminal, the desktop app): run it as a
   background Bash command, so you're notified when it exits:
   ```bash
@@ -329,7 +339,8 @@ Its prompt: `$review-laravel-upgrade Review the <upgrade branch> branch.`
   network on, the sandbox still limits writes to the project, `/tmp` and
   `$TMPDIR`. The Herdr route is interactive and uses the rules, so it needs
   nothing extra.
-- `codex` not installed or not logged in: say so in the hand-off and skip.
+- `codex` not installed or not logged in, or missing from T3's providers: say
+  so in the hand-off and skip.
 - When the report says the tests "stopped before assertions" with that
   `Operation not permitted` error, the sandbox blocked the database, not the
   code: say so, and point to your own green run from step 6.

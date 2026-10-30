@@ -243,8 +243,8 @@ never stage it with an item.
 ## Phase G — End of run
 
 1. **Final review** over the run's commits, as `references/review.md` describes
-   (the other model when its CLI is available). Clear corrections: one fixer
-   round, then one commit, with a `Task:` trailer for each item it touches.
+   (the other model, through a T3 delegate or its CLI). Clear corrections: one
+   fixer round, then one commit, with a `Task:` trailer for each item it touches.
    Judgment calls go to the human in the report; no second review. Run file:
    `End-of-run review`.
 2. **Report.**

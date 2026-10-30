@@ -111,10 +111,11 @@ Nothing is pushed without your yes.
 | Each plan item, before its commit | `review-code --quick`: one reviewer for correctness and spec | 1 subagent |
 | End of the run | Full `review-code` over the run's commits, against the run file | by the other model, or 4 lanes |
 
-The end-of-run review runs in **the other model** when its CLI works: Claude
-builds and Codex reviews, or the reverse. Clear corrections get one fix commit;
-judgment calls come to you in the report. There is no second review round
-unless you ask for one.
+The end-of-run review runs in **the other model**: Claude builds and Codex
+reviews, or the reverse. In T3 Code it is a T3 delegate with its own thread;
+elsewhere it goes through the other CLI, when that works. Clear corrections get
+one fix commit; judgment calls come to you in the report. There is no second
+review round unless you ask for one.
 
 `review-code` on its own:
 
@@ -170,7 +171,7 @@ claude -p --permission-mode plan '/review-code 3 --spec .task-runs/<file>.md'
 | Claude Code in a terminal | Reviewers and the builders of plan items are subagents; go items are built inline. |
 | Codex in a terminal | Same, with Codex's subagents. Codex reads Notion through the same hosted Notion MCP as Claude, added by `plugins.sh`, which also starts the Notion login in the browser (once per machine; `codex mcp login notion` redoes it). |
 | Herdr | Nothing Herdr-specific: run `/task` in a pane. Herdr still shows each agent's state. Its own skill remains for when you ask for Herdr by name. |
-| T3 Code (later) | `/task` runs as a provider skill. T3 runs one skill per message, which `/task` respects. |
+| T3 Code (later) | `/task` runs as a provider skill. T3 runs one skill per message, which `/task` respects. The end-of-run review runs as a T3 delegate on the other provider. |
 
 ## Later: parallel work with worktrees
 
