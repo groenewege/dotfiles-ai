@@ -85,9 +85,11 @@ Affiche l'email complet dans ta réponse, prêt à copier-coller.
 
 Ensuite, copie le contenu brut de l'email dans le presse-papiers via Bash :
 1. Écris le texte brut de l'email (sans aucun formatage markdown) dans un fichier temporaire
-2. Copie ce fichier avec `pbcopy < /tmp/client_email_tmp.txt` sur macOS, `wl-copy < /tmp/client_email_tmp.txt` sur Linux
-3. Supprime le fichier temporaire
-4. Indique à l'utilisateur : "L'email a été copié dans votre presse-papiers."
+2. Copie ce fichier avec `LC_ALL=en_US.UTF-8 pbcopy < /tmp/client_email_tmp.txt` sur macOS, `wl-copy < /tmp/client_email_tmp.txt` sur Linux
+   - Sur macOS, garde toujours `LC_ALL=en_US.UTF-8` devant `pbcopy`. Sous T3 Code (variable `T3CODE_THREAD_ID` définie), le shell hérite de `LANG=en_FR.UTF-8`, une locale qui n'existe pas sur macOS : sans ce préfixe, `pbcopy` ne lit pas le texte en UTF-8 et les accents sont abîmés au collage (« ajoutÃ© » au lieu de « ajouté »).
+3. Vérifie le collage : `LC_ALL=en_US.UTF-8 pbpaste | head -3` doit afficher les accents correctement. Sinon, corrige avant de continuer.
+4. Supprime le fichier temporaire
+5. Indique à l'utilisateur : "L'email a été copié dans votre presse-papiers."
 
 Si des captures d'écran sont référencées, indique en dessous de l'email :
 > **Captures à joindre :** capture_01.png, capture_02.png, ...
