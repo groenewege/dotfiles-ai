@@ -1,0 +1,28 @@
+# Per-project settings for the Amp orb scripts in .agents/. The scripts come
+# unchanged from groenewege/dotfiles-ai (orb/laravel); adapt only this file.
+# Sourced by bash from the repository root.
+
+PHP_VERSION=8.3
+# Installed as php$PHP_VERSION-<name>, next to php$PHP_VERSION-cli.
+PHP_EXTENSIONS=(bcmath curl gd intl mbstring mysql readline sqlite3 xml zip)
+
+# A component of repo.mysql.com/apt, such as mysql-8.4-lts or mysql-9.7-lts.
+MYSQL_SERIES=mysql-8.4-lts
+DB_NAME=myproject # change per project
+DB_TEST_NAME=myproject_test # must match phpunit.xml
+
+# Private Composer repositories that need HTTP basic auth: one
+# "host USERNAME_VARIABLE PASSWORD_VARIABLE" entry each, naming Amp project
+# secrets. A host is only configured when both of its secrets are set.
+# Leave empty when every package is public. Example:
+#   COMPOSER_HTTP_BASIC=("satis.filamentexamples.com SATIS_USERNAME SATIS_PASSWORD")
+COMPOSER_HTTP_BASIC=()
+
+# npm script that builds the front-end assets. The default picks "build", else
+# "production", from package.json; set a name to override, or "" to skip building.
+FRONTEND_BUILD_SCRIPT="$(jq -r '.scripts // {} | if has("build") then "build" elif has("production") then "production" else "" end' package.json 2>/dev/null || true)"
+
+# Project lines for the orb notes in /home/user/workspace/AGENTS.md (Markdown list items).
+# Leave empty when there is nothing to add.
+ORB_NOTES='- Seeded logins (password in database/seeders/UserSeeder.php): `admin@example.com`.
+  Admin panel: `/admin`.'

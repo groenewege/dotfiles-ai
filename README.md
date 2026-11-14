@@ -48,7 +48,8 @@ The dotfiles repos of both machines do this for you.
 ## Amp orbs
 
 Amp reads `~/.claude/skills`, so in an Amp orb the project's `.agents/setup`
-(copied from [orb/laravel](orb/laravel/README.md)) clones this repo to
+(copied from [orb/laravel](orb/laravel/README.md), with project values in
+`.agents/orb-config`) clones this repo to
 `~/dotfiles-ai`, runs `install.sh`, and writes `AGENTS.md` to
 `/home/user/workspace/AGENTS.md` with a short orb note on top. The orb's
 `.agents/resume` pulls this repo on every wake, so pushed changes reach orbs
