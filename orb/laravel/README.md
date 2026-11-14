@@ -27,8 +27,10 @@ Private Composer repositories: list each host with the names of two Amp
 example `COMPOSER_HTTP_BASIC=("satis.filamentexamples.com SATIS_USERNAME SATIS_PASSWORD")`,
 then store those secrets in the project. A host whose secrets are missing is
 skipped with a warning, so `composer install` fails only if it needs that host.
-Setup writes `~/.config/amp-orb/composer-auth.sh`, sourced by login shells, so
-agent shells get the same `COMPOSER_AUTH` for `composer require`.
+Setup installs `/usr/local/bin/composer` as a wrapper around the Composer phar
+that adds `COMPOSER_AUTH` for those hosts on every call, so `composer require`
+works in agent shells too. (A line in `~/.bash_profile` would not: agent shells
+are not login shells, and Amp regenerates the dotfiles when it saves a snapshot.)
 
 Also per project:
 

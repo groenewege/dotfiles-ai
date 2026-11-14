@@ -40,7 +40,7 @@ tmp="$(mktemp)"
 - Run the site with \`amp orb services ensure\` and share the printed portal URL. $frontend_note
 EOF
 	if [ ${#composer_hosts[@]} -gt 0 ]; then
-		echo "- Login shells export \`COMPOSER_AUTH\` for ${composer_hosts[*]} from Amp project secrets."
+		echo "- \`composer\` (a wrapper in /usr/local/bin) adds credentials for ${composer_hosts[*]} from Amp project secrets."
 	fi
 	if [ -n "${ORB_NOTES:-}" ]; then
 		echo "$ORB_NOTES"
