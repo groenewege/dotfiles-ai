@@ -15,6 +15,11 @@ I rarely work on them directly.
 - Ask before pushing to staging: it deploys.
 - Leave merges to main or master to the developer.
 
+Exception: a run I start from `~/Code/multi-laravel` (one task applied to
+several `~/Sites` projects) may merge into and push `staging` and
+`main`/`master`, but only in the cases that folder's `AGENTS.md` and skills
+allow. Everything else above still applies to those projects.
+
 Projects in `~/Code` (my own tools and dotfiles; nothing deploys): you may
 commit, merge and push to any branch, main included.
 
